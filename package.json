@@ -1,0 +1,35 @@
+{
+  "name": "web3-webpacked",
+  "version": "1.0.0",
+  "description": "",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "npx webpack --watch",
+    "build": "npx webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NoahHydro/web3-webpacked.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NoahHydro/web3-webpacked/issues"
+  },
+  "homepage": "https://github.com/NoahHydro/web3-webpacked#readme",
+  "dependencies": {
+    "eth-sig-util": "^1.4.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.0.1",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "webpack": "^4.13.0",
+    "webpack-cli": "^3.0.8"
+  }
+}
