@@ -1,3 +1,5 @@
+[![Image from Gyazo](https://i.gyazo.com/b46b1798ec60070aac70445bfdaddc41.gif)](https://gyazo.com/b46b1798ec60070aac70445bfdaddc41)
+
 # Web3: Webpacked
 
 `web3Webpacked` is a drop-in web3 solution for single-page Ethereum dApps. It's a [webpacked](https://webpack.js.org/) library consisting of:
