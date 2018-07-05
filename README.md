@@ -1,6 +1,6 @@
-# web3-webpacked
+# Web3: Webpacked
 
-`web3-webpacked` is a drop-in web3 solution for single-page Ethereum dApps. It's a [webpacked](https://webpack.js.org/) library consisting of:
+`web3Webpacked` is a drop-in web3 solution for single-page Ethereum dApps. It's a [webpacked](https://webpack.js.org/) library consisting of:
 
 - A robust management framework for the global `web3` object injected into browsers by [MetaMask](https://metamask.io/), [Trust](https://trustwalletapp.com/), etc. It exposes an instantiated [web3.js](https://web3js.readthedocs.io/en/1.0/) instance, keeps variables such as the current network and default account up-to-date, and fires customizable handlers when key events occur.
 
