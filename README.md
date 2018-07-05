@@ -1,4 +1,4 @@
-[![Image from Gyazo](https://i.gyazo.com/b46b1798ec60070aac70445bfdaddc41.gif)](https://gyazo.com/b46b1798ec60070aac70445bfdaddc41)
+![Image from Gyazo](https://i.gyazo.com/b46b1798ec60070aac70445bfdaddc41.gif)
 
 # Web3: Webpacked
 
