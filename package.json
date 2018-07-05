@@ -20,7 +20,8 @@
   },
   "homepage": "https://github.com/NoahHydro/web3-webpacked#readme",
   "dependencies": {
-    "eth-sig-util": "^1.4.2"
+    "eth-sig-util": "^1.4.2",
+    "web3": "^1.0.0-beta.34"
   },
   "devDependencies": {
     "eslint": "^5.0.1",
@@ -29,7 +30,9 @@
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
-    "webpack": "^4.13.0",
+    "unminified-webpack-plugin": "^2.0.0",
+    "webpack": "^4.15.1",
+    "webpack-bundle-analyzer": "^2.13.1",
     "webpack-cli": "^3.0.8"
   }
 }
