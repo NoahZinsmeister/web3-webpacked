@@ -17,5 +17,25 @@ module.exports = {
     new webpack.optimize.OccurrenceOrderPlugin(),
     new UnminifiedWebpackPlugin(),
     new BundleAnalyzerPlugin()
-  ]
+  ],
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader',
+          query: {
+            presets: [
+              'babel-preset-env'
+            ].map(require.resolve),
+            plugins: [
+              require('babel-plugin-transform-object-rest-spread'),
+              require('babel-plugin-transform-runtime')
+            ]
+          }
+        }
+      }
+    ]
+  }
 }

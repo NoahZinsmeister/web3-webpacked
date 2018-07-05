@@ -9,7 +9,7 @@
 - Generic utility functions that hash and sign typed data, format [Etherscan](https://etherscan.io/) links, etc. are exposed.
 
 ## Installation
-Include the [minified bundle](./dist/web3Webpacked.min.js) (747 KiB) in your source code:
+Include the [minified bundle](./dist/web3Webpacked.min.js) (773 KiB) in your source code:
 
 ```html
 <script src="js/web3Webpacked.min.js"></script>
