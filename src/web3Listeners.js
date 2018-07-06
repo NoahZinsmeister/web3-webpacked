@@ -35,7 +35,7 @@ const config = {
   allowedNetworks: [1, 3, 4, 42] // mainnet, ropsten, rinkeby, kovan
 }
 
-var lastTimePolled
+var lastTimePolled = new Date(0)
 
 const initializeWeb3 = (passedConfig) => {
   if (state.initializeCalled) throw Error('initializeWeb3 was already called.')
@@ -71,13 +71,11 @@ const initializeWeb3 = (passedConfig) => {
 const web3Poll = () => {
   // prevent polling overload
   let currentTime = new Date()
-  if ((lastTimePolled + config.pollTime) >= currentTime) return
+  if ((lastTimePolled + config.pollTime) > currentTime) return
   lastTimePolled = currentTime
-  // console.log(`Polling at ${currentTime}.`)
 
   // TODO: investigate whether the wrapped web3js instance updates when window.web3 updates (i.e. changes networks)...
-  // ...but the page is not refreshed
-  // check for network changes per:
+  // ...but the page is not refreshed per:
   // https://medium.com/metamask/breaking-change-no-longer-reloading-pages-on-network-change-4a3e1fd2f5e7
   let networkPromise = state.web3js.eth.net.getId()
     .then(id => {
@@ -110,19 +108,34 @@ const web3Poll = () => {
       }
     })
     .catch(error => {
-      resetState()
+      resetState(true)
       config.handlers.web3ErrorHandler(error)
     })
 }
 
-const getWeb3js = () => {
+const ensureInitialized = () => {
   if (!state.initializeCalled) throw Error('Call initializeWeb3 before calling this method.')
   if (state.web3Error) throw Error('There was a web3 error. Check your browser, and call initializeWeb3 again.')
+}
 
+const getWeb3js = () => {
+  ensureInitialized()
   return state.web3js
+}
+
+const getAccount = () => {
+  ensureInitialized()
+  return state.account
+}
+
+const getNetworkId = () => {
+  ensureInitialized()
+  return state.networkId
 }
 
 module.exports = {
   initializeWeb3: initializeWeb3,
-  getWeb3js: getWeb3js
+  getWeb3js: getWeb3js,
+  getAccount: getAccount,
+  getNetworkId: getNetworkId
 }

@@ -9,20 +9,21 @@ module.exports = {
     path.resolve(__dirname, 'src', 'main.js')
   ],
   output: {
-    library: 'web3Webpacked',
     path: path.resolve(__dirname, 'dist'),
+    library: 'w3w',
+    libraryTarget: 'umd',
     filename: 'web3Webpacked.min.js'
   },
   plugins: [
     new webpack.optimize.OccurrenceOrderPlugin(),
     new UnminifiedWebpackPlugin(),
-    new BundleAnalyzerPlugin()
+    new BundleAnalyzerPlugin({ openAnalyzer: false })
   ],
   module: {
     rules: [
       {
         test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
+        exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
           query: {
