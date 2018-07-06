@@ -1,6 +1,6 @@
-![Example GIF](https://cdn-images-1.medium.com/max/1600/1*FYj3JzB51RWuYrr-T-RdnA.gif)
-
 # Web3: Webpacked
+
+![Example GIF](./_assets/example.gif)
 
 This project is a drop-in solution for single-page Ethereum dApps. It's a [webpacked](https://webpack.js.org/) library consisting of:
 
