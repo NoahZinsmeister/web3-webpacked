@@ -1,4 +1,4 @@
-![Example GIF](https://cdn-images-1.medium.com/max/1600/1*KEX__Wl1urQynl99jxogPA.gif)
+![Example GIF](https://cdn-images-1.medium.com/max/1600/1*FYj3JzB51RWuYrr-T-RdnA.gif)
 
 # Web3: Webpacked
 
