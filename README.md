@@ -39,17 +39,15 @@ See [Config Options](#config-options) for more instructions on what to include i
 The following options can be set in the `config` variable passed to `initializeWeb3`.
 
 ### `handler`
-- `Object` Up to four handlers triggered on various events.
+- `Object` Up to five handlers triggered on various events.
   - `noWeb3Handler: function()` Triggered when no injected `window.web3` instance was found. This means that the user's browser does not have web3 support. Will also be triggered if your code calls `initializeWeb3` before web3 injection occurred (in which case you should re-read the [Installation](#installation) instructions).
+  - `web3Ready: function()` Triggered when the `web3js` instance is available to be fetched with `getWeb3js`, and the current network/accounts can be fetched with the their respective getters.
   - `web3ErrorHandler: function([error])` Triggered when there was an error communicating with the Ethereum blockchain.
   - `web3NetworkChangeHandler: function([networkId, oldNetworkId])` Triggered on network changes.
   - `web3AccountChangeHandler: function([account, oldAccount])` Triggered on default account changes.
 
 ### `pollTime`
 - `Number` The poll interval (in milliseconds). The current recommendation is to poll for [account](https://github.com/MetaMask/faq/blob/master/DEVELOPERS.md) and [network](https://medium.com/metamask/breaking-change-no-longer-reloading-pages-on-network-change-4a3e1fd2f5e7) changes.
-
-### `allowedNetworks`
-- `Array` of `Number` Enforces that the injected `web3` instance is connected to a particular network. If the detected network id is not in the passed list, `web3ErrorHandler` will be triggered, and `web3` functionality will be removed.
 
 ### Default Values
 The default `config` values are below. You are encouraged to customize these!
@@ -58,22 +56,31 @@ The default `config` values are below. You are encouraged to customize these!
 const config = {
   handlers: {
     noWeb3Handler: () => {
+      // Here, prompt the user to e.g. install MetaMask or download Trust
       console.error('No web3 instance detected.')
     },
+    web3Ready: () => {
+      // Here, initialize your smart contracts and check all blockchain-dependent data, e.g. address balances
+      console.log('web3 initialized.')
+    },
     web3ErrorHandler: (error) => {
-      if (error.message.includes('Network Disallowed:')) console.error('Unsupported network.')
+      // Here, prompt the user to ensure that their browser is connected to Ethereum and try again
       console.error(`web3 Error: ${error}`)
     },
     web3NetworkChangeHandler: (networkId, oldNetworkId) => {
+      // Here, notify the user that they have switched networks, and potentially deal with unsupported networks
       console.log(`Network switched from ${oldNetworkId} to ${networkId}.`)
     },
     web3AccountChangeHandler: (account, oldAccount) => {
-      if (account === null) console.log('No account detected, a password unlock is likely required.')
-      console.log(`Primary account switched from ${oldAccount} to ${account}.`)
+      // Here, notify the user that they have switched accounts
+      if (account === null) {
+        console.log('No account detected, a password unlock is likely required.')
+      } else {
+        console.log(`Primary account switched from ${oldAccount} to ${account}.`)
+      }
     }
   },
-  pollTime: 1000, // 1 second
-  allowedNetworks: [1, 3, 4, 42] // mainnet, ropsten, rinkeby, kovan
+  pollTime: 1000 // 1 second
 }
 ```
 
@@ -84,8 +91,8 @@ const config = {
 - `window.w3w.getNetworkId()`: Returns the current network id as a `Number`.
 - `window.w3w.getNetworkName([networkId])`: Returns the name of a network (defaults to the current network).
 - `window.w3w.getNetworkType([networkId])`: Returns the type of a network (defaults to the current network).
-- `window.w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The validity of the returned signature is guaranteed.
-- `window.w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction` or `address`.
+- `window.w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
+- `window.w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction` or `address` (defaults to the current network).
 - `window.w3w.libraries.`
   - `eth-sig-util`: Exposes the [eth-sig-util](https://github.com/MetaMask/eth-sig-util) package.
   - `ethereumjs-util`: Exposes the [ethereumjs-util](https://github.com/ethereumjs/ethereumjs-util) package.

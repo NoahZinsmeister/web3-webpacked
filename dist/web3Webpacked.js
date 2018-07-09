@@ -13856,7 +13856,8 @@ var Web3 = __webpack_require__(191); // web3@1.0.0-beta.34
 var state = {};
 
 var resetState = function resetState(web3Error) {
-  state.initializeCalled = false;
+  state.initializeable = true;
+  state.initialized = false;
   state.web3error = web3Error === undefined ? false : web3Error;
 
   state.web3js = undefined;
@@ -13870,30 +13871,39 @@ var resetState = function resetState(web3Error) {
 var config = {
   handlers: {
     noWeb3Handler: function noWeb3Handler() {
+      // Here, prompt the user to e.g. install MetaMask or download Trust
       console.error('No web3 instance detected.');
     },
+    web3Ready: function web3Ready() {
+      // Here, initialize your smart contracts and check all blockchain-dependent data, e.g. address balances
+      console.log('web3 initialized.');
+    },
     web3ErrorHandler: function web3ErrorHandler(error) {
-      if (error.message.includes('Network Disallowed:')) console.log('Unsupported network.');
+      // Here, prompt the user to ensure that their browser is connected to Ethereum and try again
       console.error('web3 Error: ' + error);
     },
     web3NetworkChangeHandler: function web3NetworkChangeHandler(networkId, oldNetworkId) {
+      // Here, notify the user that they have switched networks, and potentially deal with unsupported networks
       console.log('Network switched from ' + oldNetworkId + ' to ' + networkId + '.');
     },
     web3AccountChangeHandler: function web3AccountChangeHandler(account, oldAccount) {
-      if (account === null) console.log('No account detected, a password unlock is likely required.');
-      console.log('Primary account switched from ' + oldAccount + ' to ' + account + '.');
+      // Here, notify the user that they have switched accounts
+      if (account === null) {
+        console.log('No account detected, a password unlock is likely required.');
+      } else {
+        console.log('Primary account switched from ' + oldAccount + ' to ' + account + '.');
+      }
     }
   },
-  pollTime: 1000, // 1 second
-  allowedNetworks: [1, 3, 4, 42] // mainnet, ropsten, rinkeby, kovan
+  pollTime: 1000 // 1 second
 };
 
 var lastTimePolled = new Date(0);
 
 var initializeWeb3 = function initializeWeb3(passedConfig) {
-  if (state.initializeCalled) throw Error('initializeWeb3 was already called.');
+  if (!state.initializeable) throw Error('initializeWeb3 was already called.');
   resetState();
-  state.initializeCalled = true;
+  state.initializeable = false;
 
   // deal with passed config
   if (passedConfig === undefined) passedConfig = {};
@@ -13910,18 +13920,17 @@ var initializeWeb3 = function initializeWeb3(passedConfig) {
     });
   }
   if (passedConfig.pollTime !== undefined) config.pollTime = passedConfig.pollTime;
-  if (passedConfig.allowedNetworks !== undefined) config.allowedNetworks = passedConfig.allowedNetworks;
 
   // instantiate web3js
   if (window.web3 === undefined || window.web3.currentProvider === undefined) {
     config.handlers.noWeb3Handler();
   } else {
     state.web3js = new Web3(window.web3.currentProvider);
-    web3Poll();
+    web3Poll(true);
   }
 };
 
-var web3Poll = function web3Poll() {
+var web3Poll = function web3Poll(first) {
   // prevent polling overload
   var currentTime = new Date();
   if (lastTimePolled + config.pollTime > currentTime) return;
@@ -13931,14 +13940,10 @@ var web3Poll = function web3Poll() {
   // ...but the page is not refreshed per:
   // https://medium.com/metamask/breaking-change-no-longer-reloading-pages-on-network-change-4a3e1fd2f5e7
   var networkPromise = state.web3js.eth.net.getId().then(function (id) {
-    if (!config.allowedNetworks.includes(id)) {
-      throw Error('Network Disallowed: Current network id \'' + id + '\' is disallowed.'); // triggers web3ErrorHandler below
-    } else {
-      if (state.networkId !== id) {
-        var oldNetworkId = state.networkId;
-        state.networkId = id;
-        config.handlers.web3NetworkChangeHandler(state.networkId, oldNetworkId);
-      }
+    if (state.networkId !== id) {
+      var oldNetworkId = state.networkId;
+      state.networkId = id;
+      config.handlers.web3NetworkChangeHandler(state.networkId, oldNetworkId);
     }
   });
 
@@ -13956,6 +13961,10 @@ var web3Poll = function web3Poll() {
     if (state.pollId === undefined) {
       state.pollId = setInterval(web3Poll, config.pollTime);
     }
+    if (first) {
+      state.initialized = true;
+      config.handlers.web3Ready();
+    }
   }).catch(function (error) {
     resetState(true);
     config.handlers.web3ErrorHandler(error);
@@ -13963,8 +13972,8 @@ var web3Poll = function web3Poll() {
 };
 
 var ensureInitialized = function ensureInitialized() {
-  if (!state.initializeCalled) throw Error('Call initializeWeb3 before calling this method.');
-  if (state.web3Error) throw Error('There was a web3 error. Check your browser, and call initializeWeb3 again.');
+  if (state.web3Error) throw Error('There was a web3 error. Ensure that your browser is connected to Ethereum.');
+  if (!state.initialized) throw Error('web3 is not initialized. Consider putting this code in the web3Ready handler');
 };
 
 var getWeb3js = function getWeb3js() {
