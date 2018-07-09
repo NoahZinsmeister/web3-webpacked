@@ -13856,7 +13856,7 @@ var Web3 = __webpack_require__(191); // web3@1.0.0-beta.34
 var state = {};
 
 var resetState = function resetState(web3Error) {
-  state.initializeable = true;
+  state.initializeCalled = false;
   state.initialized = false;
   state.web3error = web3Error === undefined ? false : web3Error;
 
@@ -13901,9 +13901,9 @@ var config = {
 var lastTimePolled = new Date(0);
 
 var initializeWeb3 = function initializeWeb3(passedConfig) {
-  if (!state.initializeable) throw Error('initializeWeb3 was already called.');
+  if (state.initializeCalled) throw Error('initializeWeb3 was already called.');
   resetState();
-  state.initializeable = false;
+  state.initializeCalled = true;
 
   // deal with passed config
   if (passedConfig === undefined) passedConfig = {};
@@ -13961,7 +13961,7 @@ var web3Poll = function web3Poll(first) {
     if (state.pollId === undefined) {
       state.pollId = setInterval(web3Poll, config.pollTime);
     }
-    if (first) {
+    if (first === true) {
       state.initialized = true;
       config.handlers.web3Ready();
     }
