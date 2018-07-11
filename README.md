@@ -106,6 +106,7 @@ const config = {
 - `window.w3w.getNetworkId()`: Returns the current network id as a `Number`.
 - `window.w3w.getNetworkName([networkId])`: Returns the name of a network (defaults to the current network).
 - `window.w3w.getNetworkType([networkId])`: Returns the type of a network (defaults to the current network).
+- `window.w3w.signPersonal(messageHash)`: Signs a 32-byte hash with the current default account per [this article](https://medium.com/metamask/the-new-secure-way-to-sign-data-in-your-browser-6af9dd2a1527). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address. Note: the hex string is garbled in the MetaMask UI, (it's interpreted as a utf-8 string).
 - `window.w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
 - `window.w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction` or `address` (defaults to the current network).
 - `window.w3w.networkErrorName`: The name of the error thrown when the injected web3 instance is on an unsupported network.

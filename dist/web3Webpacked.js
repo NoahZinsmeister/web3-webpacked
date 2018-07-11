@@ -62140,6 +62140,39 @@ var networkDataById = {
   }
 };
 
+var signPersonal = function signPersonal(hashedMessage) {
+  var from = listeners.getAccount();
+  if (!ethUtil.isValidChecksumAddress(from)) throw Error('Current account \'' + from + '\' has an invalid checksum.');
+
+  return new _promise2.default(function (resolve, reject) {
+    listeners.getWeb3js().currentProvider.sendAsync({
+      method: 'personal_sign',
+      params: [hashedMessage, from],
+      from: from
+    }, function (error, result) {
+      if (error) reject(error);
+      if (result.error) reject(result.error.message);
+
+      var returnData = {};
+      returnData.signature = result.result;
+
+      var signature = ethUtil.fromRpcSig(returnData.signature);
+      returnData.r = ethUtil.addHexPrefix(Buffer.from(signature.r).toString('hex'));
+      returnData.s = ethUtil.addHexPrefix(Buffer.from(signature.s).toString('hex'));
+      returnData.v = signature.v;
+
+      // ensure that the signature matches
+      var recovered = ethUtil.ecrecover(ethUtil.hashPersonalMessage(ethUtil.toBuffer(hashedMessage)), signature.v, ethUtil.toBuffer(signature.r), ethUtil.toBuffer(signature.s));
+      if (ethUtil.toChecksumAddress(ethUtil.pubToAddress(recovered).toString('hex')) !== from) {
+        reject(Error('The returned signature \'' + returnData.signature + '\' didn\'t originate from address \'' + from + '\'.'));
+      }
+      returnData.from = from;
+
+      resolve(returnData);
+    });
+  });
+};
+
 var signTypedData = function signTypedData(typedData) {
   var from = listeners.getAccount();
   if (!ethUtil.isValidChecksumAddress(from)) throw Error('Current account \'' + from + '\' has an invalid checksum.');
@@ -62163,13 +62196,13 @@ var signTypedData = function signTypedData(typedData) {
         sig: returnData.signature
       });
       if (ethUtil.toChecksumAddress(recovered) !== from) {
-        reject(Error('The returned signature \'' + result.result + '\' didn\'t originate from address \'' + from + '\'.'));
+        reject(Error('The returned signature \'' + returnData.signature + '\' didn\'t originate from address \'' + from + '\'.'));
       }
       returnData.from = from;
 
       returnData.messageHash = ethSigUtil.typedSignatureHash(typedData);
 
-      var signature = ethUtil.fromRpcSig(result.result);
+      var signature = ethUtil.fromRpcSig(returnData.signature);
       returnData.r = ethUtil.addHexPrefix(Buffer.from(signature.r).toString('hex'));
       returnData.s = ethUtil.addHexPrefix(Buffer.from(signature.s).toString('hex'));
       returnData.v = signature.v;
@@ -62203,6 +62236,7 @@ var etherscanFormat = function etherscanFormat(type, data, networkId) {
 };
 
 module.exports = {
+  signPersonal: signPersonal,
   signTypedData: signTypedData,
   getNetworkName: getNetworkName,
   getNetworkType: getNetworkType,
