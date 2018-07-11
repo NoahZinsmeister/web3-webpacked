@@ -114,28 +114,26 @@ const web3Poll = (first) => {
       let account = (accounts[0] === undefined) ? null : accounts[0]
 
       // update network id
-      if (state.networkId !== id) {
-        let oldNetworkId = state.networkId
-        state.networkId = id
-        config.handlers.web3NetworkChangeHandler(state.networkId, oldNetworkId)
-      }
+      let oldNetworkId = state.networkId
+      if (state.networkId !== id) { state.networkId = id }
 
       // update account
-      if (state.account !== account) {
-        let oldAccount = state.account
-        state.account = account
-        config.handlers.web3AccountChangeHandler(state.account, oldAccount)
-      }
-
-      // poll if not already
-      if (state.pollId === undefined) {
-        state.pollId = setInterval(web3Poll, config.pollTime)
-      }
+      let oldAccount = state.account
+      if (state.account !== account) { state.account = account }
 
       // handle first-time initialization
       if (first === true) {
         state.initialized = true
         config.handlers.web3Ready()
+      }
+
+      // call handlers
+      if (oldNetworkId !== state.networkId) { config.handlers.web3NetworkChangeHandler(state.networkId, oldNetworkId) }
+      if (oldAccount !== state.account) { config.handlers.web3AccountChangeHandler(state.account, oldAccount) }
+
+      // poll if not already
+      if (state.pollId === undefined) {
+        state.pollId = setInterval(web3Poll, config.pollTime)
       }
     })
     .catch(error => {

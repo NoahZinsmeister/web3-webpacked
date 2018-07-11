@@ -14050,28 +14050,34 @@ var web3Poll = function web3Poll(first) {
     var account = accounts[0] === undefined ? null : accounts[0];
 
     // update network id
+    var oldNetworkId = state.networkId;
     if (state.networkId !== id) {
-      var oldNetworkId = state.networkId;
       state.networkId = id;
-      config.handlers.web3NetworkChangeHandler(state.networkId, oldNetworkId);
     }
 
     // update account
+    var oldAccount = state.account;
     if (state.account !== account) {
-      var oldAccount = state.account;
       state.account = account;
-      config.handlers.web3AccountChangeHandler(state.account, oldAccount);
-    }
-
-    // poll if not already
-    if (state.pollId === undefined) {
-      state.pollId = setInterval(web3Poll, config.pollTime);
     }
 
     // handle first-time initialization
     if (first === true) {
       state.initialized = true;
       config.handlers.web3Ready();
+    }
+
+    // call handlers
+    if (oldNetworkId !== state.networkId) {
+      config.handlers.web3NetworkChangeHandler(state.networkId, oldNetworkId);
+    }
+    if (oldAccount !== state.account) {
+      config.handlers.web3AccountChangeHandler(state.account, oldAccount);
+    }
+
+    // poll if not already
+    if (state.pollId === undefined) {
+      state.pollId = setInterval(web3Poll, config.pollTime);
     }
   }).catch(function (error) {
     resetState(true);
