@@ -15,6 +15,8 @@ const resetState = (web3Error) => {
   state.pollId = undefined
 }
 
+const networkErrorName = 'UnsupportedEthereumNetworkError'
+
 const config = {
   handlers: {
     noWeb3Handler: () => {
@@ -26,8 +28,12 @@ const config = {
       console.log('web3 initialized.')
     },
     web3ErrorHandler: (error) => {
-      // Here, prompt the user to ensure that their browser is connected to Ethereum and try again
-      console.error(`web3 Error: ${error}`)
+      // Here, prompt the user to ensure that their browser is properly connected to Ethereum and try again
+      if (error.name === networkErrorName) {
+        console.error(error.message)
+      } else {
+        console.error(`web3 Error: ${error}`)
+      }
     },
     web3NetworkChangeHandler: (networkId, oldNetworkId) => {
       // Here, notify the user that they have switched networks, and potentially deal with unsupported networks
@@ -42,7 +48,8 @@ const config = {
       }
     }
   },
-  pollTime: 1000 // 1 second
+  pollTime: 1000, // 1 second
+  supportedNetworks: [1, 3, 4, 42] // mainnet, ropsten, rinkeby, kovan
 }
 
 var lastTimePolled = new Date(0)
@@ -67,6 +74,7 @@ const initializeWeb3 = (passedConfig) => {
     })
   }
   if (passedConfig.pollTime !== undefined) config.pollTime = passedConfig.pollTime
+  if (passedConfig.supportedNetworks !== undefined) config.supportedNetworks = passedConfig.supportedNetworks
 
   // instantiate web3js
   if (window.web3 === undefined || window.web3.currentProvider === undefined) {
@@ -88,29 +96,43 @@ const web3Poll = (first) => {
   // https://medium.com/metamask/breaking-change-no-longer-reloading-pages-on-network-change-4a3e1fd2f5e7
   let networkPromise = state.web3js.eth.net.getId()
     .then(id => {
-      if (state.networkId !== id) {
-        let oldNetworkId = state.networkId
-        state.networkId = id
-        config.handlers.web3NetworkChangeHandler(state.networkId, oldNetworkId)
+      if (!config.supportedNetworks.includes(id)) {
+        let error = Error(`Current network id '${id}' is unsupported.`)
+        error.name = networkErrorName
+        throw error // triggers web3ErrorHandler below
+      } else {
+        return id
       }
     })
 
   // check for default account changes
   let accountPromise = state.web3js.eth.getAccounts()
-    .then(accounts => {
+
+  Promise.all([networkPromise, accountPromise])
+    .then(values => {
+      let [id, accounts] = values
       let account = (accounts[0] === undefined) ? null : accounts[0]
+
+      // update network id
+      if (state.networkId !== id) {
+        let oldNetworkId = state.networkId
+        state.networkId = id
+        config.handlers.web3NetworkChangeHandler(state.networkId, oldNetworkId)
+      }
+
+      // update account
       if (state.account !== account) {
         let oldAccount = state.account
         state.account = account
         config.handlers.web3AccountChangeHandler(state.account, oldAccount)
       }
-    })
 
-  Promise.all([networkPromise, accountPromise])
-    .then(() => {
+      // poll if not already
       if (state.pollId === undefined) {
         state.pollId = setInterval(web3Poll, config.pollTime)
       }
+
+      // handle first-time initialization
       if (first === true) {
         state.initialized = true
         config.handlers.web3Ready()
@@ -146,5 +168,6 @@ module.exports = {
   initializeWeb3: initializeWeb3,
   getWeb3js: getWeb3js,
   getAccount: getAccount,
-  getNetworkId: getNetworkId
+  getNetworkId: getNetworkId,
+  networkErrorName: networkErrorName
 }

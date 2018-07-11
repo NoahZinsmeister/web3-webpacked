@@ -8,8 +8,14 @@ This project is a drop-in solution for single-page Ethereum dApps. It's a [webpa
 
 - Generic utility functions that sign typed data, format [Etherscan](https://etherscan.io/) links, expose npm packages, etc.
 
+## Example Projects
+Projects using `web-webpacked` include:
+- [Snowflake Dashboard](https://github.com/NoahHydro/snowflake-dashboard)
+
+Open a PR to add your project to this list!
+
 ## Installation
-Include the [minified bundle](./dist/web3Webpacked.min.js) (766 KiB) in your source code:
+Include the [minified bundle](./dist/web3Webpacked.min.js) (768 KiB) in your source code:
 
 ```html
 <script src="js/web3Webpacked.min.js"></script>
@@ -49,6 +55,10 @@ The following options can be set in the `config` variable passed to `initializeW
 ### `pollTime`
 - `Number` The poll interval (in milliseconds). The current recommendation is to poll for [account](https://github.com/MetaMask/faq/blob/master/DEVELOPERS.md) and [network](https://medium.com/metamask/breaking-change-no-longer-reloading-pages-on-network-change-4a3e1fd2f5e7) changes.
 
+### `supportedNetworks`
+- `Array` of `Numbers` Enforces that the injected `web3` instance is connected to a particular network. If the detected network id is not in the passed list, `web3ErrorHandler` will be triggered with an `UnsupportedEthereumNetworkError` error, and `web3` functionality will be removed.
+
+
 ### Default Values
 The default `config` values are below. You are encouraged to customize these!
 
@@ -64,8 +74,12 @@ const config = {
       console.log('web3 initialized.')
     },
     web3ErrorHandler: (error) => {
-      // Here, prompt the user to ensure that their browser is connected to Ethereum and try again
-      console.error(`web3 Error: ${error}`)
+      // Here, prompt the user to ensure that their browser is properly connected to Ethereum and try again
+      if (error.name === networkErrorName) {
+        console.error(error.message)
+      } else {
+        console.error(`web3 Error: ${error}`)
+      }
     },
     web3NetworkChangeHandler: (networkId, oldNetworkId) => {
       // Here, notify the user that they have switched networks, and potentially deal with unsupported networks
@@ -80,7 +94,8 @@ const config = {
       }
     }
   },
-  pollTime: 1000 // 1 second
+  pollTime: 1000, // 1 second
+  supportedNetworks: [1, 3, 4, 42] // mainnet, ropsten, rinkeby, kovan
 }
 ```
 
@@ -93,10 +108,11 @@ const config = {
 - `window.w3w.getNetworkType([networkId])`: Returns the type of a network (defaults to the current network).
 - `window.w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
 - `window.w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction` or `address` (defaults to the current network).
+- `window.w3w.networkErrorName`: The name of the error thrown when the injected web3 instance is on an unsupported network.
 - `window.w3w.libraries.`
   - `eth-sig-util`: Exposes the [eth-sig-util](https://github.com/MetaMask/eth-sig-util) package.
   - `ethereumjs-util`: Exposes the [ethereumjs-util](https://github.com/ethereumjs/ethereumjs-util) package.
 
 
 ## Note
-To ensure that your code is accessing the most up-to-date variables, be sure not to hard code values like the `web3js` instance, the default `account`, the current `networkId`, etc. Instead, call functions like `window.w3w.getWeb3js()` whenever you need a `web3js` instance. The exception to this rule is if you are displaying e.g. the current account to the user in an HTML element. In such cases, be sure to include logic in your handlers that update static elements appropriately.
+To ensure that your code is accessing the most up-to-date variables, be sure not to hard code values like the `web3js` instance, the default `account`, the current `networkId`, etc. Instead, call functions like `window.w3w.getWeb3js()` on demand, whenever you need a `web3js` instance. The exception to this rule is if you are displaying e.g. the current account to the user in an HTML element. In such cases, be sure to include logic in your handlers that update static elements appropriately.
