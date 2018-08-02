@@ -56,8 +56,7 @@ The following options can be set in the `config` variable passed to `initializeW
 - `Number` The poll interval (in milliseconds). The current recommendation is to poll for [account](https://github.com/MetaMask/faq/blob/master/DEVELOPERS.md) and [network](https://medium.com/metamask/breaking-change-no-longer-reloading-pages-on-network-change-4a3e1fd2f5e7) changes.
 
 ### `supportedNetworks`
-- `Array` of `Numbers` Enforces that the injected `web3` instance is connected to a particular network. If the detected network id is not in the passed list, `web3ErrorHandler` will be triggered with an `UnsupportedEthereumNetworkError` error, and `web3` functionality will be removed.
-
+- `Array` of `Numbers` Enforces that the injected `web3` instance is connected to a particular network. If the detected network id is not in the passed list, `web3ErrorHandler` will be triggered with an `UnsupportedEthereumNetworkError` error, and `web3` functionality will be removed. Supported network ids are: `1`, `3`, `4`, and `42`.
 
 ### Default Values
 The default `config` values are below. You are encouraged to customize these!
@@ -82,7 +81,7 @@ const config = {
       }
     },
     web3NetworkChangeHandler: (networkId, oldNetworkId) => {
-      // Here, notify the user that they have switched networks, and potentially deal with unsupported networks
+      // Here, deal with network changes (will only be called when switching between/to supported networks)
       console.log(`Network switched from ${oldNetworkId} to ${networkId}.`)
     },
     web3AccountChangeHandler: (account, oldAccount) => {
@@ -103,9 +102,9 @@ const config = {
 - `window.w3w.initializeWeb3([config])`: Initialize web3 in your project. See above for more details.
 - `window.w3w.getWeb3js()`: Returns a [web3js](https://web3js.readthedocs.io/en/1.0/) instance (web3@1.0.0-beta.34).
 - `window.w3w.getAccount()`: Returns the current default account.
-- `window.w3w.getNetworkId()`: Returns the current network id as a `Number`.
-- `window.w3w.getNetworkName([networkId])`: Returns the name of a network (defaults to the current network).
-- `window.w3w.getNetworkType([networkId])`: Returns the type of a network (defaults to the current network).
+- `window.w3w.getNetworkId()`: Returns the current network id as a `Number`. Possible values: `1`, `3`, `4`, or `42`.
+- `window.w3w.getNetworkName([networkId])`: Returns the name of a network (defaults to the current network). Possible values: `Mainnet`, `Ropsten`, `Rinkeby`, or `Kovan`.
+- `window.w3w.getNetworkType([networkId])`: Returns the type of a network (defaults to the current network). Possible values: `PoW` or `PoA`.
 - `window.w3w.signPersonal(messageHash)`: Signs a 32-byte hash with the current default account per [this article](https://medium.com/metamask/the-new-secure-way-to-sign-data-in-your-browser-6af9dd2a1527). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address. Note: the hex string is garbled in the MetaMask UI, (it's interpreted as a utf-8 string).
 - `window.w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
 - `window.w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction` or `address` (defaults to the current network).
