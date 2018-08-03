@@ -15,18 +15,30 @@ Projects using `web-webpacked` include:
 Open a PR to add your project to this list!
 
 ## Installation
+
+### Script Tag
+
 Include the [minified bundle](./dist/web3Webpacked.min.js) (768 KiB) in your source code:
 
 ```html
 <script src="js/web3Webpacked.min.js"></script>
 ```
 
-This binds the library to the `window` object as `w3w`. To initialize the package:
+This binds the library to the `window` object as `w3w`.
+
+### NPM
+If you'd like to roll your own webpack solution, you can install the npm package:
+
+```javascript
+const w3w = require('web3-webpacked')
+```
+
+In either case, to initialize the package:
 
 ```javascript
 window.addEventListener('load', () => {
   console.log('Initializing web3 upon page load.')
-  window.w3w.initializeWeb3(config)
+  w3w.initializeWeb3(config)
 })
 ```
 
@@ -35,7 +47,7 @@ If you don't need `web3` functionality immediately on page load, you can initial
 ```javascript
 if (document.readyState === 'complete') {
   console.log('Initializing web3 after page load.')
-  window.w3w.initializeWeb3(config)
+  w3w.initializeWeb3(config)
 }
 ```
 
@@ -99,20 +111,21 @@ const config = {
 ```
 
 ## Usage
-- `window.w3w.initializeWeb3([config])`: Initialize web3 in your project. See above for more details.
-- `window.w3w.getWeb3js()`: Returns a [web3js](https://web3js.readthedocs.io/en/1.0/) instance (web3@1.0.0-beta.34).
-- `window.w3w.getAccount()`: Returns the current default account.
-- `window.w3w.getNetworkId()`: Returns the current network id as a `Number`. Possible values: `1`, `3`, `4`, or `42`.
-- `window.w3w.getNetworkName([networkId])`: Returns the name of a network (defaults to the current network). Possible values: `Mainnet`, `Ropsten`, `Rinkeby`, or `Kovan`.
-- `window.w3w.getNetworkType([networkId])`: Returns the type of a network (defaults to the current network). Possible values: `PoW` or `PoA`.
-- `window.w3w.signPersonal(messageHash)`: Signs a 32-byte hash with the current default account per [this article](https://medium.com/metamask/the-new-secure-way-to-sign-data-in-your-browser-6af9dd2a1527). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address. Note: the hex string is garbled in the MetaMask UI, (it's interpreted as a utf-8 string).
-- `window.w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
-- `window.w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction` or `address` (defaults to the current network).
-- `window.w3w.networkErrorName`: The name of the error thrown when the injected web3 instance is on an unsupported network.
-- `window.w3w.libraries.`
+- `w3w.initializeWeb3([config])`: Initialize web3 in your project. See above for more details.
+- `w3w.getWeb3js()`: Returns a [web3js](https://web3js.readthedocs.io/en/1.0/) instance (web3@1.0.0-beta.34).
+- `w3w.getAccount()`: Returns the current default account.
+- `w3w.getNetworkId()`: Returns the current network id as a `Number`. Possible values: `1`, `3`, `4`, or `42`.
+- `w3w.getNetworkName([networkId])`: Returns the name of a network (defaults to the current network). Possible values: `Mainnet`, `Ropsten`, `Rinkeby`, or `Kovan`.
+- `w3w.getNetworkType([networkId])`: Returns the type of a network (defaults to the current network). Possible values: `PoW` or `PoA`.
+- `w3w.getContract(ABI[, address, options])`: Returns a web3js Contract object.
+- `w3w.signPersonal(messageHash)`: Signs a 32-byte hash with the current default account per [this article](https://medium.com/metamask/the-new-secure-way-to-sign-data-in-your-browser-6af9dd2a1527). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address. Note: the hex string is garbled in the MetaMask UI, (it's interpreted as a utf-8 string).
+- `w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
+- `w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction` or `address` (defaults to the current network).
+- `w3w.networkErrorName`: The name of the error thrown when the injected web3 instance is on an unsupported network.
+- `w3w.libraries.`
   - `eth-sig-util`: Exposes the [eth-sig-util](https://github.com/MetaMask/eth-sig-util) package.
   - `ethereumjs-util`: Exposes the [ethereumjs-util](https://github.com/ethereumjs/ethereumjs-util) package.
 
 
 ## Note
-To ensure that your code is accessing the most up-to-date variables, be sure not to hard code values like the `web3js` instance, the default `account`, the current `networkId`, etc. Instead, call functions like `window.w3w.getWeb3js()` on demand, whenever you need a `web3js` instance. The exception to this rule is if you are displaying e.g. the current account to the user in an HTML element. In such cases, be sure to include logic in your handlers that update static elements appropriately.
+To ensure that your code is accessing the most up-to-date variables, be sure not to hard code values like the `web3js` instance, the default `account`, the current `networkId`, etc. Instead, call functions like `w3w.getWeb3js()` on demand, whenever you need a `web3js` instance. The exception to this rule is if you are displaying e.g. the current account to the user in an HTML element. In such cases, be sure to include logic in your handlers that update static elements appropriately.

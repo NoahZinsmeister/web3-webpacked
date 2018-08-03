@@ -112,6 +112,11 @@ const getNetworkType = (networkId) => {
   return networkDataById[networkId].type
 }
 
+const getContract = (ABI, address, options) => {
+  let web3js = listeners.getWeb3js()
+  return new web3js.eth.Contract(ABI, address, options)
+}
+
 const etherscanFormat = (type, data, networkId) => {
   if (!['transaction', 'address'].includes(type)) throw Error(`Type '${type}' is invalid.`)
   networkId = networkId === undefined ? String(listeners.getNetworkId()) : String(networkId)
@@ -128,6 +133,7 @@ module.exports = {
   signTypedData: signTypedData,
   getNetworkName: getNetworkName,
   getNetworkType: getNetworkType,
+  getContract: getContract,
   etherscanFormat: etherscanFormat,
   libraries: {
     'eth-sig-util': ethSigUtil,

@@ -11,7 +11,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     library: 'w3w',
-    libraryTarget: 'umd',
+    libraryTarget: 'window',
     filename: 'web3Webpacked.min.js'
   },
   plugins: [

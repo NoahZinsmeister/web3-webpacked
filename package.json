@@ -1,8 +1,8 @@
 {
   "name": "web3-webpacked",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/web3Webpacked.min.js",
+  "description": "Drop-in web3 solution for single-page Ethereum dApps",
+  "main": "src/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "npx webpack --watch",
@@ -21,7 +21,7 @@
   "homepage": "https://github.com/NoahHydro/web3-webpacked#readme",
   "dependencies": {
     "eth-sig-util": "^1.4.2",
-    "web3": "^1.0.0-beta.34"
+    "web3": "^1.0.0-beta.35"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
@@ -29,15 +29,15 @@
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.7.0",
-    "eslint": "^5.0.1",
+    "eslint": "^5.2.0",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.13.0",
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
     "unminified-webpack-plugin": "^2.0.0",
-    "webpack": "^4.15.1",
+    "webpack": "^4.16.4",
     "webpack-bundle-analyzer": "^2.13.1",
-    "webpack-cli": "^3.0.8"
+    "webpack-cli": "^3.1.0"
   }
 }
