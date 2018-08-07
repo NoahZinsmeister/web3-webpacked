@@ -12,15 +12,24 @@
     "type": "git",
     "url": "git+https://github.com/NoahHydro/web3-webpacked.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "ethereum",
+    "solidity",
+    "javascript",
+    "web3",
+    "frontend",
+    "webpack",
+    "dapp"
+  ],
+  "author": "Noah Zinsmeister",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/NoahHydro/web3-webpacked/issues"
   },
   "homepage": "https://github.com/NoahHydro/web3-webpacked#readme",
   "dependencies": {
     "eth-sig-util": "^1.4.2",
+    "ethereumjs-util": "^5.2.0",
     "web3": "^1.0.0-beta.35"
   },
   "devDependencies": {
