@@ -2,6 +2,8 @@ const ethUtil = require('ethereumjs-util')
 const ethSigUtil = require('eth-sig-util')
 const listeners = require('./web3Listeners')
 
+const ERC20ABI = [{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"}] // eslint-disable-line
+
 const networkDataById = {
   1: {
     name: 'Mainnet',
@@ -100,6 +102,32 @@ const signTypedData = (typedData) => {
   })
 }
 
+const getBalance = (account, format) => {
+  if (account === undefined) account = listeners.getAccount()
+  if (format === undefined) format = 'ether'
+
+  return listeners.getWeb3js().eth.getBalance(account)
+    .then(balance => {
+      return listeners.getWeb3js().utils.fromWei(balance, format)
+    })
+}
+
+const getERC20Balance = (ERC20Address, account) => {
+  if (account === undefined) account = listeners.getAccount()
+
+  let ERC20 = getContract(ERC20ABI, ERC20Address)
+
+  let decimalsPromise = () => { return ERC20.methods.decimals().call() }
+  let balancePromise = () => { return ERC20.methods.balanceOf(account).call() }
+
+  return Promise.all([decimalsPromise(), balancePromise()])
+    .then(([decimals, balance]) => {
+      let integer = balance.slice(0, balance.length - decimals)
+      let fraction = balance.slice(balance.length - decimals)
+      return `${integer}${fraction.length > 0 ? '.' : ''}${fraction}`
+    })
+}
+
 const getNetworkName = (networkId) => {
   networkId = networkId === undefined ? String(listeners.getNetworkId()) : String(networkId)
   if (!Object.keys(networkDataById).includes(networkId)) throw Error(`Network id '${networkId}' is invalid.`)
@@ -118,12 +146,19 @@ const getContract = (ABI, address, options) => {
 }
 
 const etherscanFormat = (type, data, networkId) => {
-  if (!['transaction', 'address'].includes(type)) throw Error(`Type '${type}' is invalid.`)
+  if (!['transaction', 'address', 'token'].includes(type)) throw Error(`Type '${type}' is invalid.`)
   networkId = networkId === undefined ? String(listeners.getNetworkId()) : String(networkId)
   if (!Object.keys(networkDataById).includes(networkId)) throw Error(`Network id '${networkId}' is invalid.`)
 
-  const prefix = networkDataById[networkId].etherscanPrefix
-  const path = type === 'transaction' ? 'tx' : 'address'
+  let prefix = networkDataById[networkId].etherscanPrefix
+  var path
+  if (type === 'transaction') {
+    path = 'tx'
+  } else if (type === 'address') {
+    path = 'address'
+  } else {
+    path = 'token'
+  }
 
   return `https://${prefix}etherscan.io/${path}/${data}`
 }
@@ -131,6 +166,8 @@ const etherscanFormat = (type, data, networkId) => {
 module.exports = {
   signPersonal: signPersonal,
   signTypedData: signTypedData,
+  getBalance: getBalance,
+  getERC20Balance: getERC20Balance,
   getNetworkName: getNetworkName,
   getNetworkType: getNetworkType,
   getContract: getContract,
