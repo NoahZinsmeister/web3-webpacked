@@ -27,14 +27,16 @@ const networkDataById = {
   }
 }
 
-const signPersonal = (hashedMessage) => {
+const signPersonal = (message) => {
   var from = listeners.getAccount()
   if (!ethUtil.isValidChecksumAddress(from)) throw Error(`Current account '${from}' has an invalid checksum.`)
+
+  let encodedMessage = ethUtil.bufferToHex(Buffer.from(message, 'utf8'))
 
   return new Promise((resolve, reject) => {
     listeners.getWeb3js().currentProvider.sendAsync({
       method: 'personal_sign',
-      params: [hashedMessage, from],
+      params: [encodedMessage, from],
       from: from
     }, (error, result) => {
       if (error) reject(error)
@@ -50,7 +52,7 @@ const signPersonal = (hashedMessage) => {
 
       // ensure that the signature matches
       var recovered = ethUtil.ecrecover(
-        ethUtil.hashPersonalMessage(ethUtil.toBuffer(hashedMessage)),
+        ethUtil.hashPersonalMessage(ethUtil.toBuffer(message)),
         signature.v, ethUtil.toBuffer(signature.r), ethUtil.toBuffer(signature.s)
       )
       if (ethUtil.toChecksumAddress(ethUtil.pubToAddress(recovered).toString('hex')) !== from) {

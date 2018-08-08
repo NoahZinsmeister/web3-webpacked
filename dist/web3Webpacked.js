@@ -64074,14 +64074,16 @@ var networkDataById = {
   }
 };
 
-var signPersonal = function signPersonal(hashedMessage) {
+var signPersonal = function signPersonal(message) {
   var from = listeners.getAccount();
   if (!ethUtil.isValidChecksumAddress(from)) throw Error('Current account \'' + from + '\' has an invalid checksum.');
+
+  var encodedMessage = ethUtil.bufferToHex(Buffer.from(message, 'utf8'));
 
   return new _promise2.default(function (resolve, reject) {
     listeners.getWeb3js().currentProvider.sendAsync({
       method: 'personal_sign',
-      params: [hashedMessage, from],
+      params: [encodedMessage, from],
       from: from
     }, function (error, result) {
       if (error) reject(error);
@@ -64096,7 +64098,7 @@ var signPersonal = function signPersonal(hashedMessage) {
       returnData.v = signature.v;
 
       // ensure that the signature matches
-      var recovered = ethUtil.ecrecover(ethUtil.hashPersonalMessage(ethUtil.toBuffer(hashedMessage)), signature.v, ethUtil.toBuffer(signature.r), ethUtil.toBuffer(signature.s));
+      var recovered = ethUtil.ecrecover(ethUtil.hashPersonalMessage(ethUtil.toBuffer(message)), signature.v, ethUtil.toBuffer(signature.r), ethUtil.toBuffer(signature.s));
       if (ethUtil.toChecksumAddress(ethUtil.pubToAddress(recovered).toString('hex')) !== from) {
         reject(Error('The returned signature \'' + returnData.signature + '\' didn\'t originate from address \'' + from + '\'.'));
       }
