@@ -64172,9 +64172,18 @@ var getERC20Balance = function getERC20Balance(ERC20Address, account) {
         decimals = _ref2[0],
         balance = _ref2[1];
 
-    var integer = balance.slice(0, balance.length - decimals);
-    var fraction = balance.slice(balance.length - decimals);
-    return '' + integer + (fraction.length > 0 ? '.' : '') + fraction;
+    if (decimals > balance.length) {
+      balance = '0'.repeat(decimals - balance.length) + balance;
+    }
+    var difference = balance.length - decimals;
+
+    var integer = difference === 0 ? 0 : balance.slice(0, difference);
+    var fraction = balance.slice(difference);
+    fraction = fraction.split('').every(function (character) {
+      return character === '0';
+    }) ? '' : fraction;
+
+    return integer + (fraction === '' ? '' : '.') + fraction;
   });
 };
 

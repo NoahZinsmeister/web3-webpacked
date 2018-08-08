@@ -122,9 +122,16 @@ const getERC20Balance = (ERC20Address, account) => {
 
   return Promise.all([decimalsPromise(), balancePromise()])
     .then(([decimals, balance]) => {
-      let integer = balance.slice(0, balance.length - decimals)
-      let fraction = balance.slice(balance.length - decimals)
-      return `${integer}${fraction.length > 0 ? '.' : ''}${fraction}`
+      if (decimals > balance.length) {
+        balance = '0'.repeat(decimals - balance.length) + balance
+      }
+      let difference = balance.length - decimals
+
+      let integer = difference === 0 ? 0 : balance.slice(0, difference)
+      let fraction = balance.slice(difference)
+      fraction = fraction.split('').every(character => { return character === '0' }) ? '' : fraction
+
+      return integer + (fraction === '' ? '' : '.') + fraction
     })
 }
 
