@@ -27,6 +27,92 @@ const networkDataById = {
   }
 }
 
+const sendTransaction = (method, handlers) => {
+  let requiredHandlers = ['error']
+  let optionalHandlers = ['transactionHash', 'receipt', 'confirmation']
+  let allHandlers = requiredHandlers.concat(optionalHandlers)
+  // ensure an error handler was passed
+  if (!requiredHandlers.every(handler => { return Object.keys(handlers).includes(handler) })) {
+    throw Error('Please provide an \'error\' handler.')
+  }
+  // ensure only allowed handlers can be passed
+  if (!Object.keys(handlers).every(handler => { return allHandlers.includes(handler) })) {
+    throw Error(`Invalid handler passed. Allowed handlers are: '${allHandlers.toString().join(`', '`)}'.`)
+  }
+  // for all handlers that weren't passed, set them as empty functions
+  for (let i = 0; i < allHandlers.length; i++) {
+    if (handlers[allHandlers[i]] === undefined) handlers[allHandlers[i]] = () => {}
+  }
+
+  // define promises for the variables we need to validate/send the transaction
+  var gasPricePromise = () => {
+    return listeners.getWeb3js().eth.getGasPrice()
+      .catch(error => {
+        handlers['error'](error, 'Could not fetch gas price.')
+        return null
+      })
+  }
+
+  var gasPromise = () => {
+    return method.estimateGas({ from: listeners.getAccount() })
+      .catch(error => {
+        handlers['error'](error, 'The transaction would fail.')
+        return null
+      })
+  }
+
+  let balanceWeiPromise = () => {
+    return getBalance(undefined, 'wei')
+      .catch(error => {
+        handlers['error'](error, 'Could not fetch sending address balance.')
+        return null
+      })
+  }
+
+  let handledErrorName = 'HandledError'
+
+  return Promise.all([gasPricePromise(), gasPromise(), balanceWeiPromise()])
+    .then(results => {
+      // ensure that none of the promises failed
+      if (results.some(result => { return result === null })) {
+        let error = Error('This error was already handled.')
+        error.name = handledErrorName
+        throw error
+      }
+
+      // extract variables
+      let [gasPrice, gas, balanceWei] = results
+
+      // ensure the sender has enough ether to pay gas
+      let safeGas = parseInt(gas * 1.1)
+      let requiredWei = new ethUtil.BN(gasPrice).mul(new ethUtil.BN(safeGas))
+      if (new ethUtil.BN(balanceWei).lt(requiredWei)) {
+        let requiredEth = toDecimal(requiredWei.toString(), '18')
+        let errorMessage = `Insufficient balance. Ensure you have at least ${requiredEth} ETH.`
+        handlers['error'](Error(errorMessage), errorMessage)
+        return
+      }
+
+      // send the transaction
+      method.send({ from: listeners.getAccount(), gasPrice: gasPrice, gas: safeGas })
+        .on('transactionHash', transactionHash => {
+          handlers['transactionHash'](transactionHash)
+        })
+        .on('receipt', (receipt) => {
+          handlers['receipt'](receipt)
+        })
+        .on('confirmation', (confirmationNumber, receipt) => {
+          handlers['confirmation'](confirmationNumber, receipt)
+        })
+        .on('error', error => {
+          handlers['error'](error, 'Unable to send transaction.')
+        })
+    })
+    .catch(error => {
+      if (error.name !== handledErrorName) { handlers['error'](error, 'Unexpected error.') }
+    })
+}
+
 const signPersonal = (message) => {
   var from = listeners.getAccount()
   if (!ethUtil.isValidChecksumAddress(from)) throw Error(`Current account '${from}' has an invalid checksum.`)
@@ -191,6 +277,7 @@ module.exports = {
   getNetworkName: getNetworkName,
   getNetworkType: getNetworkType,
   getContract: getContract,
+  sendTransaction: sendTransaction,
   toDecimal: toDecimal,
   fromDecimal: fromDecimal,
   etherscanFormat: etherscanFormat,

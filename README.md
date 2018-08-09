@@ -6,7 +6,9 @@ This project is a drop-in solution for single-page Ethereum dApps. It's a [webpa
 
 - A robust management framework for the global `web3` object injected into browsers by [MetaMask](https://metamask.io/), [Trust](https://trustwalletapp.com/), etc. The framework exposes an instantiated [web3.js](https://web3js.readthedocs.io/en/1.0/) instance, keeps variables such as the current network and default account up-to-date, and fires customizable handlers when key events occur.
 
-- Generic utility functions that sign typed data, format [Etherscan](https://etherscan.io/) links, expose npm packages, etc.
+- Generic utility functions that fetch Ether and ERC20 balances, sign data, format [Etherscan](https://etherscan.io/) links, expose npm packages, etc.
+
+- A fully managed solution for sending transactions that abstracts away from common annoyances like estimating gas usage and fetching current gas prices.
 
 ## Example Projects
 Projects using `web-webpacked` include:
@@ -18,7 +20,7 @@ Open a PR to add your project to this list!
 
 ### Script Tag
 
-Include the [minified bundle](./dist/web3Webpacked.min.js) (799 KiB) in your source code:
+Include the [minified bundle](./dist/web3Webpacked.min.js) (800 KiB) in your source code:
 
 ```html
 <script src="js/web3Webpacked.min.js"></script>
@@ -120,6 +122,9 @@ const config = {
 - `w3w.getContract(ABI[, address, options])`: Returns a web3js Contract object.
 - `w3w.getBalance([account, format])`: Returns the balance of an Ethereum address (defaults to the current account).
 - `w3w.getERC20Balance([ERC20Address, account])`: Returns the token balance of an Ethereum address (defaults to the personal account) for any ERC20. Decimals are read from the smart contract.
+- `w3w.toDecimal(number, decimals)`: number must be a `String`. Returns a decimalized version of the number as a `String`. Helpful when converting e.g. token balances from their `uint256` state in an Ethereum smart contract to actual balances.
+- `w3w.fromDecimal(number, decimals)`: number must be a `String`. The opposite of `w3w.toDecimal`. Converts the number to an expanded form.
+- `w3w.sendTransaction(method, handlers)`: An all-in-one function that manages the entire transaction sending flow. Ensures that function call won't fail given the current state of the network, that the sender has enough ether to cover the gas costs of the transaction, and calls `handlers` appropriately. `handlers` is an `Object` that must include an `error` handler, as well as optional `transactionHash`, `receipt`, and `confirmation` handlers. These correspond to [emitted `web3js` events](https://web3js.readthedocs.io/en/1.0/web3-eth.html#eth-sendtransaction-return).
 - `w3w.signPersonal(message)`: Signs a message with the current default account per [this article](https://medium.com/metamask/the-new-secure-way-to-sign-data-in-your-browser-6af9dd2a1527). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
 - `w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
 - `w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction`, `address`, or `token` (defaults to the current network).

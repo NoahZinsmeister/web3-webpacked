@@ -64031,10 +64031,6 @@ module.exports = function (_ref) {
 "use strict";
 /* WEBPACK VAR INJECTION */(function(Buffer) {
 
-var _keys = __webpack_require__(97);
-
-var _keys2 = _interopRequireDefault(_keys);
-
 var _slicedToArray2 = __webpack_require__(88);
 
 var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
@@ -64042,6 +64038,10 @@ var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 var _promise = __webpack_require__(92);
 
 var _promise2 = _interopRequireDefault(_promise);
+
+var _keys = __webpack_require__(97);
+
+var _keys2 = _interopRequireDefault(_keys);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -64072,6 +64072,97 @@ var networkDataById = {
     type: 'PoA',
     etherscanPrefix: 'kovan.'
   }
+};
+
+var sendTransaction = function sendTransaction(method, handlers) {
+  var requiredHandlers = ['error'];
+  var optionalHandlers = ['transactionHash', 'receipt', 'confirmation'];
+  var allHandlers = requiredHandlers.concat(optionalHandlers);
+  // ensure an error handler was passed
+  if (!requiredHandlers.every(function (handler) {
+    return (0, _keys2.default)(handlers).includes(handler);
+  })) {
+    throw Error('Please provide an \'error\' handler.');
+  }
+  // ensure only allowed handlers can be passed
+  if (!(0, _keys2.default)(handlers).every(function (handler) {
+    return allHandlers.includes(handler);
+  })) {
+    throw Error('Invalid handler passed. Allowed handlers are: \'' + allHandlers.toString().join('\', \'') + '\'.');
+  }
+  // for all handlers that weren't passed, set them as empty functions
+  for (var i = 0; i < allHandlers.length; i++) {
+    if (handlers[allHandlers[i]] === undefined) handlers[allHandlers[i]] = function () {};
+  }
+
+  // define promises for the variables we need to validate/send the transaction
+  var gasPricePromise = function gasPricePromise() {
+    return listeners.getWeb3js().eth.getGasPrice().catch(function (error) {
+      handlers['error'](error, 'Could not fetch gas price.');
+      return null;
+    });
+  };
+
+  var gasPromise = function gasPromise() {
+    return method.estimateGas({ from: listeners.getAccount() }).catch(function (error) {
+      handlers['error'](error, 'The transaction would fail.');
+      return null;
+    });
+  };
+
+  var balanceWeiPromise = function balanceWeiPromise() {
+    return getBalance(undefined, 'wei').catch(function (error) {
+      handlers['error'](error, 'Could not fetch sending address balance.');
+      return null;
+    });
+  };
+
+  var handledErrorName = 'HandledError';
+
+  return _promise2.default.all([gasPricePromise(), gasPromise(), balanceWeiPromise()]).then(function (results) {
+    // ensure that none of the promises failed
+    if (results.some(function (result) {
+      return result === null;
+    })) {
+      var error = Error('This error was already handled.');
+      error.name = handledErrorName;
+      throw error;
+    }
+
+    // extract variables
+
+    var _results = (0, _slicedToArray3.default)(results, 3),
+        gasPrice = _results[0],
+        gas = _results[1],
+        balanceWei = _results[2];
+
+    // ensure the sender has enough ether to pay gas
+
+
+    var safeGas = parseInt(gas * 1.1);
+    var requiredWei = new ethUtil.BN(gasPrice).mul(new ethUtil.BN(safeGas));
+    if (new ethUtil.BN(balanceWei).lt(requiredWei)) {
+      var requiredEth = toDecimal(requiredWei.toString(), '18');
+      var errorMessage = 'Insufficient balance. Ensure you have at least ' + requiredEth + ' ETH.';
+      handlers['error'](Error(errorMessage), errorMessage);
+      return;
+    }
+
+    // send the transaction
+    method.send({ from: listeners.getAccount(), gasPrice: gasPrice, gas: safeGas }).on('transactionHash', function (transactionHash) {
+      handlers['transactionHash'](transactionHash);
+    }).on('receipt', function (receipt) {
+      handlers['receipt'](receipt);
+    }).on('confirmation', function (confirmationNumber, receipt) {
+      handlers['confirmation'](confirmationNumber, receipt);
+    }).on('error', function (error) {
+      handlers['error'](error, 'Unable to send transaction.');
+    });
+  }).catch(function (error) {
+    if (error.name !== handledErrorName) {
+      handlers['error'](error, 'Unexpected error.');
+    }
+  });
 };
 
 var signPersonal = function signPersonal(message) {
@@ -64245,6 +64336,7 @@ module.exports = {
   getNetworkName: getNetworkName,
   getNetworkType: getNetworkType,
   getContract: getContract,
+  sendTransaction: sendTransaction,
   toDecimal: toDecimal,
   fromDecimal: fromDecimal,
   etherscanFormat: etherscanFormat,
