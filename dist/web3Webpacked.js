@@ -64169,24 +64169,37 @@ var getERC20Balance = function getERC20Balance(ERC20Address, account) {
     return ERC20.methods.balanceOf(account).call();
   };
 
-  return _promise2.default.all([decimalsPromise(), balancePromise()]).then(function (_ref) {
+  return _promise2.default.all([balancePromise(), decimalsPromise()]).then(function (_ref) {
     var _ref2 = (0, _slicedToArray3.default)(_ref, 2),
-        decimals = _ref2[0],
-        balance = _ref2[1];
+        balance = _ref2[0],
+        decimals = _ref2[1];
 
-    if (decimals > balance.length) {
-      balance = '0'.repeat(decimals - balance.length) + balance;
-    }
-    var difference = balance.length - decimals;
-
-    var integer = difference === 0 ? 0 : balance.slice(0, difference);
-    var fraction = balance.slice(difference);
-    fraction = fraction.split('').every(function (character) {
-      return character === '0';
-    }) ? '' : fraction;
-
-    return integer + (fraction === '' ? '' : '.') + fraction;
+    return toDecimal(balance, decimals);
   });
+};
+
+var toDecimal = function toDecimal(number, decimals) {
+  if (number.length < decimals) {
+    number = '0'.repeat(decimals - number.length) + number;
+  }
+  var difference = number.length - decimals;
+
+  var integer = difference === 0 ? '0' : number.slice(0, difference);
+  var fraction = number.slice(difference).replace(/0+$/g, '');
+
+  return integer + (fraction === '' ? '' : '.') + fraction;
+};
+
+var fromDecimal = function fromDecimal(number, decimals) {
+  var _number$split = number.split('.'),
+      _number$split2 = (0, _slicedToArray3.default)(_number$split, 2),
+      integer = _number$split2[0],
+      fraction = _number$split2[1];
+
+  fraction = fraction === undefined ? '' : fraction;
+  if (fraction.length > decimals) throw new Error('The fractional amount of the passed number was too high');
+  fraction = fraction + '0'.repeat(decimals - fraction.length);
+  return integer + fraction;
 };
 
 var getNetworkName = function getNetworkName(networkId) {
@@ -64232,6 +64245,8 @@ module.exports = {
   getNetworkName: getNetworkName,
   getNetworkType: getNetworkType,
   getContract: getContract,
+  toDecimal: toDecimal,
+  fromDecimal: fromDecimal,
   etherscanFormat: etherscanFormat,
   libraries: {
     'eth-sig-util': ethSigUtil,

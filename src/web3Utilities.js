@@ -122,19 +122,30 @@ const getERC20Balance = (ERC20Address, account) => {
   let decimalsPromise = () => { return ERC20.methods.decimals().call() }
   let balancePromise = () => { return ERC20.methods.balanceOf(account).call() }
 
-  return Promise.all([decimalsPromise(), balancePromise()])
-    .then(([decimals, balance]) => {
-      if (decimals > balance.length) {
-        balance = '0'.repeat(decimals - balance.length) + balance
-      }
-      let difference = balance.length - decimals
-
-      let integer = difference === 0 ? 0 : balance.slice(0, difference)
-      let fraction = balance.slice(difference)
-      fraction = fraction.split('').every(character => { return character === '0' }) ? '' : fraction
-
-      return integer + (fraction === '' ? '' : '.') + fraction
+  return Promise.all([balancePromise(), decimalsPromise()])
+    .then(([balance, decimals]) => {
+      return toDecimal(balance, decimals)
     })
+}
+
+const toDecimal = (number, decimals) => {
+  if (number.length < decimals) {
+    number = '0'.repeat(decimals - number.length) + number
+  }
+  let difference = number.length - decimals
+
+  let integer = difference === 0 ? '0' : number.slice(0, difference)
+  let fraction = number.slice(difference).replace(/0+$/g, '')
+
+  return integer + (fraction === '' ? '' : '.') + fraction
+}
+
+const fromDecimal = (number, decimals) => {
+  var [integer, fraction] = number.split('.')
+  fraction = fraction === undefined ? '' : fraction
+  if (fraction.length > decimals) throw new Error('The fractional amount of the passed number was too high')
+  fraction = fraction + '0'.repeat(decimals - fraction.length)
+  return integer + fraction
 }
 
 const getNetworkName = (networkId) => {
@@ -180,6 +191,8 @@ module.exports = {
   getNetworkName: getNetworkName,
   getNetworkType: getNetworkType,
   getContract: getContract,
+  toDecimal: toDecimal,
+  fromDecimal: fromDecimal,
   etherscanFormat: etherscanFormat,
   libraries: {
     'eth-sig-util': ethSigUtil,
