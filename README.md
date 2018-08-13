@@ -26,7 +26,7 @@ Include the [minified bundle](./dist/web3Webpacked.min.js) (800 KiB) in your sou
 <script src="js/web3Webpacked.min.js"></script>
 ```
 
-This binds the library to the `window` object as `w3w`.
+This binds the library to the `window` as `w3w`.
 
 ### NPM
 If you'd like to roll your own webpack solution, you can install the npm package:
@@ -76,30 +76,30 @@ The following options can be set in the `config` variable passed to `initializeW
 The default `config` values are below. You are encouraged to customize these!
 
 ```javascript
-const config = {
+let config = {
   handlers: {
+    // Prompt the user to e.g. install MetaMask or download Trust
     noWeb3Handler: () => {
-      // Here, prompt the user to e.g. install MetaMask or download Trust
       console.error('No web3 instance detected.')
     },
+    // Check blockchain-dependent data
     web3Ready: () => {
-      // Here, initialize your smart contracts and check all blockchain-dependent data, e.g. address balances
       console.log('web3 initialized.')
     },
+    // Notify the user of error, deal with unsupported networks
     web3ErrorHandler: (error) => {
-      // Here, prompt the user to ensure that their browser is properly connected to Ethereum and try again
       if (error.name === networkErrorName) {
         console.error(error.message)
       } else {
         console.error(`web3 Error: ${error}`)
       }
     },
+    // Notify the user that they have switched networks, potentially re-instatiate smart contracts
     web3NetworkChangeHandler: (networkId, oldNetworkId) => {
-      // Here, deal with network changes (will only be called when switching between/to supported networks)
       console.log(`Network switched from ${oldNetworkId} to ${networkId}.`)
     },
+    // Notify the user that they have switched accounts, update balances
     web3AccountChangeHandler: (account, oldAccount) => {
-      // Here, notify the user that they have switched accounts
       if (account === null) {
         console.log('No account detected, a password unlock is likely required.')
       } else {
@@ -114,7 +114,7 @@ const config = {
 
 ## Usage
 - `w3w.initializeWeb3([config])`: Initialize web3 in your project. See above for more details.
-- `w3w.getWeb3js()`: Returns a [web3js](https://web3js.readthedocs.io/en/1.0/) instance (web3@1.0.0-beta.34). Note that `web3-webpacked` is forced to be opinionated, and has integrated web3js in lieu of possible alternatives like [ethjs](https://github.com/ethjs/ethjs). In the future, it's possible that two branches will be maintained, with web3js and ethjs compatibility respectively. There is also an argument to be made for letting users build this library themselves with arbitrary versions of the web3 manager (how exactly this would look is TBD). If any of this is of interest, please submit an issue with your ideas/comments.
+- `w3w.getWeb3js()`: Returns a [web3js](https://web3js.readthedocs.io/en/1.0/) instance (web3@1.0.0-beta.34).
 - `w3w.getAccount()`: Returns the current default account.
 - `w3w.getNetworkId()`: Returns the current network id as a `Number`. Possible values: `1`, `3`, `4`, or `42`.
 - `w3w.getNetworkName([networkId])`: Returns the name of a network (defaults to the current network). Possible values: `Mainnet`, `Ropsten`, `Rinkeby`, or `Kovan`.
@@ -124,7 +124,7 @@ const config = {
 - `w3w.getERC20Balance([ERC20Address, account])`: Returns the token balance of an Ethereum address (defaults to the personal account) for any ERC20. Decimals are read from the smart contract.
 - `w3w.toDecimal(number, decimals)`: number must be a `String`. Returns a decimalized version of the number as a `String`. Helpful when converting e.g. token balances from their `uint256` state in an Ethereum smart contract to actual balances.
 - `w3w.fromDecimal(number, decimals)`: number must be a `String`. The opposite of `w3w.toDecimal`. Converts the number to an expanded form.
-- `w3w.sendTransaction(method, handlers)`: An all-in-one function that manages the entire transaction sending flow. Ensures that function call won't fail given the current state of the network, that the sender has enough ether to cover the gas costs of the transaction, and calls `handlers` appropriately. `handlers` is an `Object` that must include an `error` handler, as well as optional `transactionHash`, `receipt`, and `confirmation` handlers. These correspond to [emitted `web3js` events](https://web3js.readthedocs.io/en/1.0/web3-eth.html#eth-sendtransaction-return).
+- `w3w.sendTransaction(method, handlers)`: An all-in-one function that manages the entire transaction sending flow. Ensures that function call won't fail given the current state of the network, that the sender has enough ether to cover the gas costs of the transaction, and calls `handlers` appropriately. `handlers` is an `Object` that must include an `error` handler, as well as optional `transactionHash`, `receipt`, and `confirmation` handlers. These correspond to [emitted web3js events](https://web3js.readthedocs.io/en/1.0/web3-eth.html#eth-sendtransaction-return).
 - `w3w.signPersonal(message)`: Signs a message with the current default account per [this article](https://medium.com/metamask/the-new-secure-way-to-sign-data-in-your-browser-6af9dd2a1527). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
 - `w3w.signTypedData(typedData)`: Signs typed data with the current default account per [this article](https://medium.com/metamask/scaling-web3-with-signtypeddata-91d6efc8b290). Returns the signing address, message hash, and signature. The returned signature is guaranteed to have originated from the returned address.
 - `w3w.etherscanFormat(type, data[, networkId])`: Returns an [Etherscan](https://etherscan.io/) link to a given `transaction`, `address`, or `token` (defaults to the current network).
@@ -134,5 +134,7 @@ const config = {
   - `ethereumjs-util`: Exposes the [ethereumjs-util](https://github.com/ethereumjs/ethereumjs-util) package.
 
 
-## Note
-To ensure that your code is accessing the most up-to-date variables, be sure not to hard code values like the `web3js` instance, the default `account`, the current `networkId`, etc. Instead, call functions like `w3w.getWeb3js()` on demand, whenever you need a `web3js` instance. The exception to this rule is if you are displaying e.g. the current account to the user in an HTML element. In such cases, be sure to include logic in your handlers that update static elements appropriately.
+## Notes
+- To ensure that your code is accessing the most up-to-date variables, be sure not to hard code values like the `web3js` instance, the default `account`, the current `networkId`, etc. Instead, call functions like `w3w.getWeb3js()` on demand, whenever you need a `web3js` instance.
+
+- `web3-webpacked` is forced to be opinionated, and has integrated web3js in lieu of possible alternatives like [ethjs](https://github.com/ethjs/ethjs). In the future, it's possible that two branches will be maintained, with web3js and ethjs compatibility respectively. There is also an argument to be made for letting users build `web3-webpacked` themselves with arbitrary versions of these web3 APIs (how exactly this would look is TBD). If any of this is of interest, please submit an issue with your ideas/comments.

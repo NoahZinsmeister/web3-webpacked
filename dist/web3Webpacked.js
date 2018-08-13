@@ -14732,28 +14732,28 @@ var networkErrorName = 'UnsupportedEthereumNetworkError';
 
 var config = {
   handlers: {
+    // Prompt the user to e.g. install MetaMask or download Trust
     noWeb3Handler: function noWeb3Handler() {
-      // Here, prompt the user to e.g. install MetaMask or download Trust
       console.error('No web3 instance detected.');
     },
+    // Check blockchain-dependent data
     web3Ready: function web3Ready() {
-      // Here, initialize your smart contracts and check all blockchain-dependent data, e.g. address balances
       console.log('web3 initialized.');
     },
+    // Notify the user of error, deal with unsupported networks
     web3ErrorHandler: function web3ErrorHandler(error) {
-      // Here, prompt the user to ensure that their browser is properly connected to Ethereum and try again
       if (error.name === networkErrorName) {
         console.error(error.message);
       } else {
         console.error('web3 Error: ' + error);
       }
     },
+    // Notify the user that they have switched networks, potentially re-instatiate smart contracts
     web3NetworkChangeHandler: function web3NetworkChangeHandler(networkId, oldNetworkId) {
-      // Here, notify the user that they have switched networks, and potentially deal with unsupported networks
       console.log('Network switched from ' + oldNetworkId + ' to ' + networkId + '.');
     },
+    // Notify the user that they have switched accounts, update balances
     web3AccountChangeHandler: function web3AccountChangeHandler(account, oldAccount) {
-      // Here, notify the user that they have switched accounts
       if (account === null) {
         console.log('No account detected, a password unlock is likely required.');
       } else {
@@ -14804,43 +14804,48 @@ var web3Poll = function web3Poll(first) {
   if (lastTimePolled + config.pollTime > currentTime) return;
   lastTimePolled = currentTime;
 
-  // TODO: investigate whether the wrapped web3js instance updates when window.web3 updates (i.e. changes networks)...
+  // TODO investigate whether the wrapped web3js instance updates when window.web3 updates (i.e. changes networks)...
   // ...but the page is not refreshed per:
   // https://medium.com/metamask/breaking-change-no-longer-reloading-pages-on-network-change-4a3e1fd2f5e7
-  var networkPromise = state.web3js.eth.net.getId().then(function (id) {
-    if (!config.supportedNetworks.includes(id)) {
-      var error = Error('Current network id \'' + id + '\' is unsupported.');
-      error.name = networkErrorName;
-      throw error; // triggers web3ErrorHandler below
-    } else {
-      return id;
-    }
-  });
+  var networkPromise = function networkPromise() {
+    return state.web3js.eth.net.getId().then(function (id) {
+      if (!config.supportedNetworks.includes(id)) {
+        var error = Error('Current network id \'' + id + '\' is unsupported.');
+        error.name = networkErrorName;
+        throw error; // triggers web3ErrorHandler below
+      } else {
+        return id;
+      }
+    });
+  };
 
   // check for default account changes
-  var accountPromise = state.web3js.eth.getAccounts();
+  var accountPromise = function accountPromise() {
+    return state.web3js.eth.getAccounts();
+  };
 
-  _promise2.default.all([networkPromise, accountPromise]).then(function (values) {
+  _promise2.default.all([networkPromise(), accountPromise()]).then(function (values) {
     var _values = (0, _slicedToArray3.default)(values, 2),
         id = _values[0],
         accounts = _values[1];
 
-    var account = accounts[0] === undefined ? null : accounts[0];
-
     // update network id
+
+
     var oldNetworkId = state.networkId;
     if (state.networkId !== id) {
       state.networkId = id;
     }
 
     // update account
+    var account = accounts === undefined || accounts[0] === undefined ? null : accounts[0];
     var oldAccount = state.account;
     if (state.account !== account) {
       state.account = account;
     }
 
     // handle first-time initialization
-    if (first === true) {
+    if (first) {
       state.initialized = true;
       config.handlers.web3Ready();
     }
@@ -14865,7 +14870,7 @@ var web3Poll = function web3Poll(first) {
 
 var ensureInitialized = function ensureInitialized() {
   if (state.web3Error) throw Error('There was a web3 error. Ensure that your browser is connected to Ethereum.');
-  if (!state.initialized) throw Error('web3 is not initialized. Consider putting this code in the web3Ready handler');
+  if (!state.initialized) throw Error('web3 is not initialized. Consider using the web3Ready handler');
 };
 
 var getWeb3js = function getWeb3js() {
