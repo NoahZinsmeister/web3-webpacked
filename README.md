@@ -10,6 +10,8 @@ This project is a drop-in solution for single-page Ethereum dApps. It's a [webpa
 
 - A fully managed solution for sending transactions that abstracts away from common annoyances like estimating gas usage and fetching current gas prices.
 
+Building your dApp in React? Check out [`web3-webpacked-react`](https://github.com/NoahHydro/web3-webpacked-react).
+
 ## Example Projects
 Projects using `web-webpacked` include:
 - [Snowflake Dashboard](https://github.com/NoahHydro/snowflake-dashboard)
