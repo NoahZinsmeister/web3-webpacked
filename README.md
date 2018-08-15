@@ -29,7 +29,11 @@ Include the [minified bundle](./dist/web3Webpacked.min.js) (800 KiB) in your sou
 This binds the library to the `window` as `w3w`.
 
 ### NPM
-If you'd like to roll your own webpack solution, you can install the npm package:
+If you'd like to roll your own webpack solution, you can use the npm package:
+
+```
+npm install web3-webpacked
+```
 
 ```javascript
 const w3w = require('web3-webpacked')

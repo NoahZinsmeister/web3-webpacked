@@ -27,6 +27,18 @@ const networkDataById = {
   }
 }
 
+const getEthereumVariables = {
+  web3js: () => { return listeners.getWeb3js() },
+  account: () => { return listeners.getAccount() },
+  networkId: () => { return listeners.getNetworkId() }
+}
+
+const _setEthereumVariableGetters = (getters) => {
+  Object.keys(getters).forEach(getter => {
+    getEthereumVariables[getter] = getters[getter]
+  })
+}
+
 const sendTransaction = (method, handlers) => {
   let requiredHandlers = ['error']
   let optionalHandlers = ['transactionHash', 'receipt', 'confirmation']
@@ -46,7 +58,7 @@ const sendTransaction = (method, handlers) => {
 
   // define promises for the variables we need to validate/send the transaction
   var gasPricePromise = () => {
-    return listeners.getWeb3js().eth.getGasPrice()
+    return getEthereumVariables.web3js().eth.getGasPrice()
       .catch(error => {
         handlers['error'](error, 'Could not fetch gas price.')
         return null
@@ -54,7 +66,7 @@ const sendTransaction = (method, handlers) => {
   }
 
   var gasPromise = () => {
-    return method.estimateGas({ from: listeners.getAccount() })
+    return method.estimateGas({ from: getEthereumVariables.account() })
       .catch(error => {
         handlers['error'](error, 'The transaction would fail.')
         return null
@@ -94,7 +106,7 @@ const sendTransaction = (method, handlers) => {
       }
 
       // send the transaction
-      method.send({ from: listeners.getAccount(), gasPrice: gasPrice, gas: safeGas })
+      method.send({ from: getEthereumVariables.account(), gasPrice: gasPrice, gas: safeGas })
         .on('transactionHash', transactionHash => {
           handlers['transactionHash'](transactionHash)
         })
@@ -114,19 +126,19 @@ const sendTransaction = (method, handlers) => {
 }
 
 const signPersonal = (message) => {
-  var from = listeners.getAccount()
+  var from = getEthereumVariables.account()
   if (!ethUtil.isValidChecksumAddress(from)) throw Error(`Current account '${from}' has an invalid checksum.`)
 
   let encodedMessage = ethUtil.bufferToHex(Buffer.from(message, 'utf8'))
 
   return new Promise((resolve, reject) => {
-    listeners.getWeb3js().currentProvider.sendAsync({
+    getEthereumVariables.web3js().currentProvider.sendAsync({
       method: 'personal_sign',
       params: [encodedMessage, from],
       from: from
     }, (error, result) => {
-      if (error) reject(error)
-      if (result.error) reject(result.error.message)
+      if (error) return reject(error)
+      if (result.error) return reject(result.error.message)
 
       let returnData = {}
       returnData.signature = result.result
@@ -142,7 +154,7 @@ const signPersonal = (message) => {
         signature.v, ethUtil.toBuffer(signature.r), ethUtil.toBuffer(signature.s)
       )
       if (ethUtil.toChecksumAddress(ethUtil.pubToAddress(recovered).toString('hex')) !== from) {
-        reject(Error(`The returned signature '${returnData.signature}' didn't originate from address '${from}'.`))
+        return reject(Error(`The returned signature '${returnData.signature}' didn't originate from address '${from}'.`))
       }
       returnData.from = from
 
@@ -152,18 +164,18 @@ const signPersonal = (message) => {
 }
 
 const signTypedData = (typedData) => {
-  var from = listeners.getAccount()
+  var from = getEthereumVariables.account()
   if (!ethUtil.isValidChecksumAddress(from)) throw Error(`Current account '${from}' has an invalid checksum.`)
 
   // we have to do it this way because web3 1.0 doesn't expose this functionality
   return new Promise((resolve, reject) => {
-    listeners.getWeb3js().currentProvider.sendAsync({
+    getEthereumVariables.web3js().currentProvider.sendAsync({
       method: 'eth_signTypedData',
       params: [typedData, from],
       from: from
     }, (error, result) => {
-      if (error) reject(error)
-      if (result.error) reject(result.error.message)
+      if (error) return reject(error)
+      if (result.error) return reject(result.error.message)
 
       let returnData = {}
       returnData.signature = result.result
@@ -174,7 +186,7 @@ const signTypedData = (typedData) => {
         sig: returnData.signature
       })
       if (ethUtil.toChecksumAddress(recovered) !== from) {
-        reject(Error(`The returned signature '${returnData.signature}' didn't originate from address '${from}'.`))
+        return reject(Error(`Returned signature '${returnData.signature}' didn't originate from address '${from}'.`))
       }
       returnData.from = from
 
@@ -191,17 +203,17 @@ const signTypedData = (typedData) => {
 }
 
 const getBalance = (account, format) => {
-  if (account === undefined) account = listeners.getAccount()
+  if (account === undefined) account = getEthereumVariables.account()
   if (format === undefined) format = 'ether'
 
-  return listeners.getWeb3js().eth.getBalance(account)
+  return getEthereumVariables.web3js().eth.getBalance(account)
     .then(balance => {
-      return listeners.getWeb3js().utils.fromWei(balance, format)
+      return getEthereumVariables.web3js().utils.fromWei(balance, format)
     })
 }
 
 const getERC20Balance = (ERC20Address, account) => {
-  if (account === undefined) account = listeners.getAccount()
+  if (account === undefined) account = getEthereumVariables.account()
 
   let ERC20 = getContract(ERC20ABI, ERC20Address)
 
@@ -235,25 +247,25 @@ const fromDecimal = (number, decimals) => {
 }
 
 const getNetworkName = (networkId) => {
-  networkId = networkId === undefined ? String(listeners.getNetworkId()) : String(networkId)
+  networkId = networkId === undefined ? String(getEthereumVariables.networkId()) : String(networkId)
   if (!Object.keys(networkDataById).includes(networkId)) throw Error(`Network id '${networkId}' is invalid.`)
   return networkDataById[networkId].name
 }
 
 const getNetworkType = (networkId) => {
-  networkId = networkId === undefined ? String(listeners.getNetworkId()) : String(networkId)
+  networkId = networkId === undefined ? String(getEthereumVariables.networkId()) : String(networkId)
   if (!Object.keys(networkDataById).includes(networkId)) throw Error(`Network id '${networkId}' is invalid.`)
   return networkDataById[networkId].type
 }
 
 const getContract = (ABI, address, options) => {
-  let web3js = listeners.getWeb3js()
+  let web3js = getEthereumVariables.web3js()
   return new web3js.eth.Contract(ABI, address, options)
 }
 
 const etherscanFormat = (type, data, networkId) => {
   if (!['transaction', 'address', 'token'].includes(type)) throw Error(`Type '${type}' is invalid.`)
-  networkId = networkId === undefined ? String(listeners.getNetworkId()) : String(networkId)
+  networkId = networkId === undefined ? String(getEthereumVariables.networkId()) : String(networkId)
   if (!Object.keys(networkDataById).includes(networkId)) throw Error(`Network id '${networkId}' is invalid.`)
 
   let prefix = networkDataById[networkId].etherscanPrefix
@@ -270,6 +282,7 @@ const etherscanFormat = (type, data, networkId) => {
 }
 
 module.exports = {
+  _setEthereumVariableGetters: _setEthereumVariableGetters,
   signPersonal: signPersonal,
   signTypedData: signTypedData,
   getBalance: getBalance,
