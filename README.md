@@ -22,7 +22,7 @@ Open a PR to add your project to this list!
 
 ### Script Tag
 
-Include the [minified bundle](./dist/web3Webpacked.min.js) (800 KiB) in your source code:
+Include the [minified bundle](./dist/web3Webpacked.min.js) (820 KiB) in your source code:
 
 ```html
 <script src="js/web3Webpacked.min.js"></script>
