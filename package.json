@@ -1,6 +1,6 @@
 {
   "name": "web3-webpacked",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Drop-in web3 solution for single-page Ethereum dApps",
   "main": "dist/node/main.js",
   "scripts": {
