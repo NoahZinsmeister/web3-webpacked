@@ -31,7 +31,6 @@ module.exports = {
               'babel-preset-env'
             ].map(require.resolve),
             plugins: [
-              require('babel-plugin-transform-object-rest-spread'),
               require('babel-plugin-transform-runtime')
             ]
           }

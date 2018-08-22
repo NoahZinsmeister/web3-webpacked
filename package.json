@@ -2,11 +2,12 @@
   "name": "web3-webpacked",
   "version": "1.0.9",
   "description": "Drop-in web3 solution for single-page Ethereum dApps",
-  "main": "src/main.js",
+  "main": "dist/node/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "npx webpack --watch",
-    "build": "npx webpack"
+    "build-web": "npx webpack",
+    "build-node": "babel src -d dist/node"
   },
   "repository": {
     "type": "git",
@@ -33,9 +34,9 @@
     "web3": "^1.0.0-beta.35"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.7.0",
     "eslint": "^5.2.0",
