@@ -64163,7 +64163,14 @@ var signPersonal = function signPersonal(message) {
   var from = getEthereumVariables.account();
   if (!ethUtil.isValidChecksumAddress(from)) throw Error('Current account \'' + from + '\' has an invalid checksum.');
 
-  var encodedMessage = ethUtil.bufferToHex(Buffer.from(message, 'utf8'));
+  var encodedMessage = void 0;
+  if (Buffer.isBuffer(message)) {
+    encodedMessage = ethUtil.addHexPrefix(message.toString('hex'));
+  } else if (message.slice(0, 2) === '0x') {
+    encodedMessage = message;
+  } else {
+    encodedMessage = ethUtil.bufferToHex(Buffer.from(message, 'utf8'));
+  }
 
   return new _promise2.default(function (resolve, reject) {
     getEthereumVariables.web3js().currentProvider.sendAsync({
@@ -64177,17 +64184,20 @@ var signPersonal = function signPersonal(message) {
       var returnData = {};
       returnData.signature = result.result;
 
-      var signature = ethUtil.fromRpcSig(returnData.signature);
-      returnData.r = ethUtil.addHexPrefix(Buffer.from(signature.r).toString('hex'));
-      returnData.s = ethUtil.addHexPrefix(Buffer.from(signature.s).toString('hex'));
-      returnData.v = signature.v;
-
       // ensure that the signature matches
-      var recovered = ethUtil.ecrecover(ethUtil.hashPersonalMessage(ethUtil.toBuffer(message)), signature.v, ethUtil.toBuffer(signature.r), ethUtil.toBuffer(signature.s));
-      if (ethUtil.toChecksumAddress(ethUtil.pubToAddress(recovered).toString('hex')) !== from) {
-        return reject(Error('The returned signature \'' + returnData.signature + '\' didn\'t originate from address \'' + from + '\'.'));
+      var signature = ethUtil.fromRpcSig(returnData.signature);
+      var messageHash = ethUtil.hashPersonalMessage(ethUtil.toBuffer(encodedMessage));
+      var recovered = ethUtil.ecrecover(messageHash, signature.v, signature.r, signature.s);
+      var recoveredAddress = ethUtil.toChecksumAddress(ethUtil.pubToAddress(recovered).toString('hex'));
+      if (recoveredAddress !== from) {
+        return reject(Error('The returned signature \'' + returnData.signature + '\' originated from \'' + recoveredAddress + '\', not \'' + from + '\'.'));
       }
+
+      returnData.r = ethUtil.addHexPrefix(signature.r.toString('hex'));
+      returnData.s = ethUtil.addHexPrefix(signature.s.toString('hex'));
+      returnData.v = signature.v;
       returnData.from = from;
+      returnData.messageHash = ethUtil.addHexPrefix(messageHash.toString('hex'));
 
       resolve(returnData);
     });
@@ -64198,7 +64208,6 @@ var signTypedData = function signTypedData(typedData) {
   var from = getEthereumVariables.account();
   if (!ethUtil.isValidChecksumAddress(from)) throw Error('Current account \'' + from + '\' has an invalid checksum.');
 
-  // we have to do it this way because web3 1.0 doesn't expose this functionality
   return new _promise2.default(function (resolve, reject) {
     getEthereumVariables.web3js().currentProvider.sendAsync({
       method: 'eth_signTypedData',
@@ -64212,12 +64221,12 @@ var signTypedData = function signTypedData(typedData) {
       returnData.signature = result.result;
 
       // ensure that the signature matches
-      var recovered = ethSigUtil.recoverTypedSignature({
+      var recoveredAddress = ethUtil.toChecksumAddress(ethSigUtil.recoverTypedSignature({
         data: typedData,
         sig: returnData.signature
-      });
-      if (ethUtil.toChecksumAddress(recovered) !== from) {
-        return reject(Error('Returned signature \'' + returnData.signature + '\' didn\'t originate from address \'' + from + '\'.'));
+      }));
+      if (ethUtil.toChecksumAddress(recoveredAddress) !== from) {
+        return reject(Error('The returned signature \'' + returnData.signature + '\' originated from \'' + recoveredAddress + '\', not \'' + from + '\'.'));
       }
       returnData.from = from;
 
@@ -64227,6 +64236,7 @@ var signTypedData = function signTypedData(typedData) {
       returnData.r = ethUtil.addHexPrefix(Buffer.from(signature.r).toString('hex'));
       returnData.s = ethUtil.addHexPrefix(Buffer.from(signature.s).toString('hex'));
       returnData.v = signature.v;
+      console.log(returnData);
 
       resolve(returnData);
     });

@@ -57,7 +57,7 @@ const sendTransaction = (method, handlers) => {
   }
 
   // define promises for the variables we need to validate/send the transaction
-  var gasPricePromise = () => {
+  const gasPricePromise = () => {
     return getEthereumVariables.web3js().eth.getGasPrice()
       .catch(error => {
         handlers['error'](error, 'Could not fetch gas price.')
@@ -65,7 +65,7 @@ const sendTransaction = (method, handlers) => {
       })
   }
 
-  var gasPromise = () => {
+  const gasPromise = () => {
     return method.estimateGas({ from: getEthereumVariables.account() })
       .catch(error => {
         handlers['error'](error, 'The transaction would fail.')
@@ -73,7 +73,7 @@ const sendTransaction = (method, handlers) => {
       })
   }
 
-  let balanceWeiPromise = () => {
+  const balanceWeiPromise = () => {
     return getBalance(undefined, 'wei')
       .catch(error => {
         handlers['error'](error, 'Could not fetch sending address balance.')
@@ -81,7 +81,7 @@ const sendTransaction = (method, handlers) => {
       })
   }
 
-  let handledErrorName = 'HandledError'
+  const handledErrorName = 'HandledError'
 
   return Promise.all([gasPricePromise(), gasPromise(), balanceWeiPromise()])
     .then(results => {
@@ -93,14 +93,14 @@ const sendTransaction = (method, handlers) => {
       }
 
       // extract variables
-      let [gasPrice, gas, balanceWei] = results
+      const [gasPrice, gas, balanceWei] = results
 
       // ensure the sender has enough ether to pay gas
-      let safeGas = parseInt(gas * 1.1)
-      let requiredWei = new ethUtil.BN(gasPrice).mul(new ethUtil.BN(safeGas))
+      const safeGas = parseInt(gas * 1.1)
+      const requiredWei = new ethUtil.BN(gasPrice).mul(new ethUtil.BN(safeGas))
       if (new ethUtil.BN(balanceWei).lt(requiredWei)) {
-        let requiredEth = toDecimal(requiredWei.toString(), '18')
-        let errorMessage = `Insufficient balance. Ensure you have at least ${requiredEth} ETH.`
+        const requiredEth = toDecimal(requiredWei.toString(), '18')
+        const errorMessage = `Insufficient balance. Ensure you have at least ${requiredEth} ETH.`
         handlers['error'](Error(errorMessage), errorMessage)
         return
       }
@@ -126,10 +126,17 @@ const sendTransaction = (method, handlers) => {
 }
 
 const signPersonal = (message) => {
-  var from = getEthereumVariables.account()
+  const from = getEthereumVariables.account()
   if (!ethUtil.isValidChecksumAddress(from)) throw Error(`Current account '${from}' has an invalid checksum.`)
 
-  let encodedMessage = ethUtil.bufferToHex(Buffer.from(message, 'utf8'))
+  let encodedMessage
+  if (Buffer.isBuffer(message)) {
+    encodedMessage = ethUtil.addHexPrefix(message.toString('hex'))
+  } else if (message.slice(0, 2) === '0x') {
+    encodedMessage = message
+  } else {
+    encodedMessage = ethUtil.bufferToHex(Buffer.from(message, 'utf8'))
+  }
 
   return new Promise((resolve, reject) => {
     getEthereumVariables.web3js().currentProvider.sendAsync({
@@ -143,20 +150,25 @@ const signPersonal = (message) => {
       let returnData = {}
       returnData.signature = result.result
 
-      var signature = ethUtil.fromRpcSig(returnData.signature)
-      returnData.r = ethUtil.addHexPrefix(Buffer.from(signature.r).toString('hex'))
-      returnData.s = ethUtil.addHexPrefix(Buffer.from(signature.s).toString('hex'))
-      returnData.v = signature.v
-
       // ensure that the signature matches
-      var recovered = ethUtil.ecrecover(
-        ethUtil.hashPersonalMessage(ethUtil.toBuffer(message)),
-        signature.v, ethUtil.toBuffer(signature.r), ethUtil.toBuffer(signature.s)
+      const signature = ethUtil.fromRpcSig(returnData.signature)
+      const messageHash = ethUtil.hashPersonalMessage(ethUtil.toBuffer(encodedMessage))
+      const recovered = ethUtil.ecrecover(
+        messageHash,
+        signature.v, signature.r, signature.s
       )
-      if (ethUtil.toChecksumAddress(ethUtil.pubToAddress(recovered).toString('hex')) !== from) {
-        return reject(Error(`The returned signature '${returnData.signature}' didn't originate from address '${from}'.`))
+      const recoveredAddress = ethUtil.toChecksumAddress(ethUtil.pubToAddress(recovered).toString('hex'))
+      if (recoveredAddress !== from) {
+        return reject(Error(
+          `The returned signature '${returnData.signature}' originated from '${recoveredAddress}', not '${from}'.`
+        ))
       }
+
+      returnData.r = ethUtil.addHexPrefix(signature.r.toString('hex'))
+      returnData.s = ethUtil.addHexPrefix(signature.s.toString('hex'))
+      returnData.v = signature.v
       returnData.from = from
+      returnData.messageHash = ethUtil.addHexPrefix(messageHash.toString('hex'))
 
       resolve(returnData)
     })
@@ -164,10 +176,9 @@ const signPersonal = (message) => {
 }
 
 const signTypedData = (typedData) => {
-  var from = getEthereumVariables.account()
+  const from = getEthereumVariables.account()
   if (!ethUtil.isValidChecksumAddress(from)) throw Error(`Current account '${from}' has an invalid checksum.`)
 
-  // we have to do it this way because web3 1.0 doesn't expose this functionality
   return new Promise((resolve, reject) => {
     getEthereumVariables.web3js().currentProvider.sendAsync({
       method: 'eth_signTypedData',
@@ -181,18 +192,20 @@ const signTypedData = (typedData) => {
       returnData.signature = result.result
 
       // ensure that the signature matches
-      var recovered = ethSigUtil.recoverTypedSignature({
+      const recoveredAddress = ethUtil.toChecksumAddress(ethSigUtil.recoverTypedSignature({
         data: typedData,
         sig: returnData.signature
-      })
-      if (ethUtil.toChecksumAddress(recovered) !== from) {
-        return reject(Error(`Returned signature '${returnData.signature}' didn't originate from address '${from}'.`))
+      }))
+      if (ethUtil.toChecksumAddress(recoveredAddress) !== from) {
+        return reject(Error(
+          `The returned signature '${returnData.signature}' originated from '${recoveredAddress}', not '${from}'.`
+        ))
       }
       returnData.from = from
 
       returnData.messageHash = ethSigUtil.typedSignatureHash(typedData)
 
-      var signature = ethUtil.fromRpcSig(returnData.signature)
+      const signature = ethUtil.fromRpcSig(returnData.signature)
       returnData.r = ethUtil.addHexPrefix(Buffer.from(signature.r).toString('hex'))
       returnData.s = ethUtil.addHexPrefix(Buffer.from(signature.s).toString('hex'))
       returnData.v = signature.v
