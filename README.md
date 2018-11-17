@@ -2,6 +2,8 @@
 
 # Web3: Webpacked
 
+**Building your dApp in React? Check out the sibling React library, [`web3-webpacked-react`](https://github.com/NoahHydro/web3-webpacked-react)!**
+
 ![Example GIF](./_assets/example.gif)
 
 This project is a drop-in solution for single-page Ethereum dApps. It's a [webpacked](https://webpack.js.org/) library consisting of:
@@ -11,8 +13,6 @@ This project is a drop-in solution for single-page Ethereum dApps. It's a [webpa
 - Generic utility functions that fetch Ether and ERC20 balances, sign data, format [Etherscan](https://etherscan.io/) links, expose npm packages, etc.
 
 - A fully managed solution for sending transactions that abstracts away from common annoyances like estimating gas usage and fetching current gas prices.
-
-Building your dApp in React? Check out [`web3-webpacked-react`](https://github.com/NoahHydro/web3-webpacked-react).
 
 ## Example Projects
 Projects using `web-webpacked` include:
