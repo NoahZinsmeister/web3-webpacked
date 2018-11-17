@@ -1,3 +1,5 @@
+# This package is now deprecated. Please refer to [web3-react](https://github.com/NoahZinsmeister/web3-react).
+
 # Web3: Webpacked
 
 ![Example GIF](./_assets/example.gif)
